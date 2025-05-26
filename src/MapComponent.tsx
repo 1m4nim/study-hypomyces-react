@@ -2,8 +2,10 @@ import React from "react";
 import { MapContainer, TileLayer, Polygon } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import type { LatLngTuple } from "leaflet";
+import styles from "./MapComponent.module.css";
 
-const center: LatLngTuple = [31.8, 117.3]; // 安徽省の中心付近
+const center: LatLngTuple = [20, 0];
+const zoom = 2;
 
 const anhuiPolygon: LatLngTuple[] = [
   [34.0, 114.5],
@@ -17,19 +19,14 @@ const anhuiPolygon: LatLngTuple[] = [
 
 const MapComponent = () => {
   return (
-    <MapContainer
-      center={center}
-      zoom={7}
-      style={{ height: "600px", width: "100%" }}
-    >
+    <MapContainer center={center} zoom={zoom} className={styles.mapContainer}>
       <TileLayer
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        // ↓ 型エラーを防ぐために attributionControl を使う
         attribution="&copy; OpenStreetMap contributors"
       />
       <Polygon
         positions={anhuiPolygon}
-        pathOptions={{ color: "orange", fillOpacity: 0.4 }}
+        pathOptions={{ color: "orange", fillOpacity: 0.5 }}
       />
     </MapContainer>
   );
