@@ -1,101 +1,21 @@
 import React from "react";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import L from "leaflet";
+import "leaflet/dist/leaflet.css";
 
-// --- 中国の省ごとの座標例（必要に応じて増やしてください） ---
-const chinaRegionsCoords: { [key: string]: [number, number] } = {
-  Anhui: [31.8612, 117.2857],
-  Fujian: [26.0745, 119.2965],
-  Guangxi: [23.8298, 108.7881],
-  Hainan: [19.5664, 109.9497],
-  Hebei: [38.0428, 114.5149],
-  Hunan: [27.6104, 111.7088],
-  Jiangsu: [32.9711, 119.455],
-  Jiangxi: [27.614, 115.7221],
-  Shanghai: [31.2304, 121.4737],
-  Sichuan: [30.6517, 104.0759],
-  Zhejiang: [29.1832, 120.0934],
-  Taiwan: [23.6978, 120.9605],
-  Tibet: [31.6927, 88.0924],
-  "Inner Mongolia": [40.8175, 111.7652],
-  Guizhou: [26.5982, 106.7074],
-  Yunnan: [25.0453, 102.7091],
-  Jilin: [43.6663, 126.1923],
-  Hubei: [30.5454, 114.3423],
-  Guangdong: [23.379, 113.7633],
-  Beijing: [39.9042, 116.4074],
-  Gansu: [36.0594, 103.8262],
+type HostInfo = {
+  hosts: string;
+  distribution: string;
+  source: string;
+  notes: string;
 };
 
-// --- 国単位の座標例 ---
-const countryCoords: { [key: string]: [number, number] } = {
-  USA: [37.0902, -95.7129],
-  Canada: [56.1304, -106.3468],
-  NewZealand: [-40.9006, 174.886],
-  Belgium: [50.8503, 4.3517],
-  Europe: [54.526, 15.2551], // 大雑把にヨーロッパ中央
-  Russia: [61.524, 105.3188],
-  Japan: [36.2048, 138.2529],
-  Brazil: [-14.235, -51.9253],
-  Panama: [8.538, -80.7821],
-  Estonia: [58.5953, 25.0136],
-  Finland: [61.9241, 25.7482],
-  "The Netherlands": [52.1326, 5.2913],
-  Mexico: [23.6345, -102.5528],
-  Germany: [51.1657, 10.4515],
-  Iran: [32.4279, 53.688],
-  Korea: [35.9078, 127.7669],
-  Cuba: [21.5218, -77.7812],
-  Gabon: [-0.8037, 11.6094],
-  Indonesia: [-0.7893, 113.9213],
+type DataItem = {
+  taxa_name: string;
+  hosts: HostInfo[];
 };
 
-// --- 色付きアイコンを作る関数例（例として青色固定） ---
-const createColoredIcon = (color = "blue") => {
-  return L.divIcon({
-    className: "custom-marker-icon",
-    html: `<div style="background-color:${color};width:16px;height:16px;border-radius:50%;border:2px solid white;"></div>`,
-    iconSize: [16, 16],
-    iconAnchor: [8, 8],
-  });
-};
-
-// --- distribution文字列から座標とラベルの配列を返す ---
-const extractLocations = (distribution: string) => {
-  const coordsList: { coords: [number, number]; label: string }[] = [];
-
-  // 中国の省名部分を抽出（例: "China (Beijing, Hebei)"）
-  const chinaMatch = distribution.match(/China\s*\(([^)]+)\)/);
-  if (chinaMatch) {
-    const regions = chinaMatch[1].split(",").map((r) => r.trim());
-    regions.forEach((region) => {
-      if (chinaRegionsCoords[region]) {
-        coordsList.push({
-          coords: chinaRegionsCoords[region],
-          label: `China - ${region}`,
-        });
-      }
-    });
-  } else if (distribution.includes("China")) {
-    // 省名なしで単にChinaのみの場合
-    coordsList.push({ coords: countryCoords["China"], label: "China" });
-  }
-
-  // 中国の省名部分を取り除いて、残りの国名を抽出
-  const distNoChinaRegions = distribution.replace(/China\s*\([^)]+\)/g, "");
-  // コンマ区切りで国名を分割してトリム
-  const countries = distNoChinaRegions.split(",").map((c) => c.trim());
-
-  countries.forEach((country) => {
-    if (country && country !== "China" && countryCoords[country]) {
-      coordsList.push({ coords: countryCoords[country], label: country });
-    }
-  });
-
-  return coordsList;
-};
-
-const data = [
+const data: DataItem[] = [
   {
     taxa_name: "Hypomyces aurantius",
     hosts: [
@@ -418,38 +338,145 @@ const data = [
     ],
   },
 ];
-// --- メインコンポーネント ---
-export const MapWithMarkers = () => {
+
+const chinaRegionsCoords: { [key: string]: [number, number] } = {
+  Anhui: [31.8612, 117.2857],
+  Fujian: [26.0745, 119.2965],
+  Zhejiang: [29.1832, 120.0934],
+};
+
+const countryCoords: { [key: string]: [number, number] } = {
+  Japan: [36.2048, 138.2529],
+  USA: [37.0902, -95.7129],
+  Korea: [35.9078, 127.7669],
+};
+
+function extractLocations(
+  distribution: string
+): { label: string; coords: [number, number] }[] {
+  const results: { label: string; coords: [number, number] }[] = [];
+
+  const chinaMatch = distribution.match(/China\s*\(([^)]+)\)/);
+  if (chinaMatch) {
+    const provinces = chinaMatch[1].split(",").map((p) => p.trim());
+    provinces.forEach((province) => {
+      if (chinaRegionsCoords[province]) {
+        results.push({
+          label: `China (${province})`,
+          coords: chinaRegionsCoords[province],
+        });
+      }
+    });
+  }
+
+  const rest = distribution.replace(/China\s*\([^)]+\)/g, "");
+  const parts = rest.split(",").map((p) => p.trim());
+
+  parts.forEach((place) => {
+    if (countryCoords[place]) {
+      results.push({ label: place, coords: countryCoords[place] });
+    }
+  });
+
+  return results;
+}
+
+function createColoredIcon(color: string) {
+  const svgIcon = encodeURIComponent(`
+    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="48">
+      <path fill="${color}" d="M16 0C9 0 3 6 3 13c0 10 13 23 13 23s13-13 13-23C29 6 23 0 16 0z"/>
+      <circle cx="16" cy="13" r="5" fill="white"/>
+    </svg>
+  `);
+
+  return new L.Icon({
+    iconUrl: `data:image/svg+xml;charset=UTF-8,${svgIcon}`,
+    iconSize: [32, 48],
+    iconAnchor: [16, 48],
+    popupAnchor: [0, -40],
+  });
+}
+
+const colorMap: { [taxa: string]: string } = {};
+const getColorForTaxa = (taxa: string): string => {
+  if (!colorMap[taxa]) {
+    colorMap[taxa] =
+      "#" +
+      Math.floor(Math.random() * 0xffffff)
+        .toString(16)
+        .padStart(6, "0");
+  }
+  return colorMap[taxa];
+};
+
+const TaxaMap: React.FC = () => {
+  const markers: {
+    coords: [number, number];
+    label: string;
+    taxa: string;
+    hosts: string[];
+  }[] = [];
+
+  data.forEach((item) => {
+    item.hosts.forEach((host) => {
+      const locations = extractLocations(host.distribution);
+      locations.forEach((loc) => {
+        markers.push({
+          coords: loc.coords,
+          label: loc.label,
+          taxa: item.taxa_name,
+          hosts: [host.hosts],
+        });
+      });
+    });
+  });
+
+  const uniqueMarkers = markers.filter(
+    (m, i, arr) =>
+      arr.findIndex(
+        (x) =>
+          x.coords[0] === m.coords[0] &&
+          x.coords[1] === m.coords[1] &&
+          x.taxa === m.taxa
+      ) === i
+  );
+
   return (
     <MapContainer
-      center={[20, 0]}
-      zoom={2}
+      center={[30, 110]}
+      zoom={4}
       style={{ height: "600px", width: "100%" }}
     >
       <TileLayer
+        attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a>'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        attribution="© OpenStreetMap contributors"
       />
-
-      {data.map(({ taxa_name, hosts }) =>
-        hosts
-          .flatMap((host) => extractLocations(host.distribution))
-          .map(({ coords, label }) => (
-            <Marker
-              key={`${taxa_name}-${label}`}
-              position={coords}
-              icon={createColoredIcon("blue")}
-            >
-              <Popup>
-                <div>
-                  <b>{taxa_name}</b>
+      {uniqueMarkers.map((marker, idx) => (
+        <Marker
+          key={idx}
+          position={marker.coords}
+          icon={createColoredIcon(getColorForTaxa(marker.taxa))}
+        >
+          <Popup>
+            <div>
+              <strong>{marker.taxa}</strong>
+              <br />
+              <em>{marker.label}</em>
+              <br />
+              Hosts:
+              <br />
+              {marker.hosts[0].split(", ").map((host, index) => (
+                <span key={index}>
+                  {host}
                   <br />
-                  {label}
-                </div>
-              </Popup>
-            </Marker>
-          ))
-      )}
+                </span>
+              ))}
+            </div>
+          </Popup>
+        </Marker>
+      ))}
     </MapContainer>
   );
 };
+
+export default TaxaMap;

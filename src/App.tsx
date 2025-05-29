@@ -1,13 +1,9 @@
 // src/App.jsx
 import React from "react";
-import MapView from "./MapView";
+import TaxaMap from "./TaxaMap";
 
 const App: React.FC = () => {
-  return (
-    <div style={{ height: "100vh", width: "100vw" }}>
-      <MapView />
-    </div>
-  );
+  return <TaxaMap />;
 };
 
 export default App;
