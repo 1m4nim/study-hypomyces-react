@@ -7,7 +7,6 @@ type Region = {
   coords: [number, number][];
   color: string;
   taxaName: string;
-  // host は使わないので外しました
 };
 
 const hosts = [
