@@ -6,3 +6,6 @@ https://study-hypomyces-react.vercel.app
 
 ## 2025/05/28
 - Hypomyces aurantiusだけマッピングしてみた
+
+## 2025/05/30
+- マッピングできた！がしかし、全部色が同じなのでtaxaごとに色分けたい
