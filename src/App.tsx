@@ -1,5 +1,6 @@
 import React from "react";
 import MapComponent from "./MapComponent";
+import { Helmet } from "react-helmet";
 
 const App = () => {
   const taxaData = [
@@ -327,7 +328,32 @@ const App = () => {
     },
   ];
 
-  return <MapComponent taxaData={taxaData} />;
+  return (
+    <>
+      <Helmet>
+        <title>Hypomycesを種ごとの色分布を作ってみた</title>
+        <meta
+          property="og:title"
+          content="Hypomycesを種ごとの色分布を作ってみた"
+        />
+        <meta
+          property="og:description"
+          content="Hypomycesの種ごとの色分布をReactで可視化したサイトです。"
+        />
+        <meta property="og:type" content="website" />
+        <meta
+          property="og:url"
+          content="https://study-hypomyces-react.vercel.app/"
+        />
+        <meta property="og:site_name" content="Hypomyces 色分布" />
+        <meta name="twitter:card" content="summary" />
+      </Helmet>
+
+      <main>
+        <MapComponent taxaData={taxaData} />
+      </main>
+    </>
+  );
 };
 
 export default App;
