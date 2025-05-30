@@ -1,10 +1,11 @@
 // MarkerSidebar.tsx
 import React, { useState } from "react";
-import { MapContainer, TileLayer, Marker } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import MapComponent from "./MapComponent";
 
-// ここにMarkerSidebarコンポーネントを定義（簡単に実装例）
+// サイドバーコンポーネント
 const MarkerSidebar: React.FC<{
   taxa_name: string;
   hosts: string;
@@ -15,10 +16,15 @@ const MarkerSidebar: React.FC<{
     <div
       style={{
         width: "30%",
-        height: "100%",
+        height: "100vh",
         overflowY: "auto",
         backgroundColor: "#f0f0f0",
         padding: 20,
+        position: "fixed",
+        right: 0,
+        top: 0,
+        boxShadow: "-2px 0 5px rgba(0,0,0,0.3)",
+        zIndex: 1000,
       }}
     >
       <button onClick={onClose} style={{ marginBottom: 10 }}>
@@ -35,12 +41,110 @@ const MarkerSidebar: React.FC<{
   );
 };
 
-export type MarkerData = {
-  name: string;
-  coords: [number, number];
-  region: string;
-  taxa: string;
+// 地域名と緯度経度の対応（例）
+export const regionToCoords: { [key: string]: [number, number] } = {
+  Anhui: [31.8612, 117.2857],
+  Fujian: [26.0745, 119.2965],
+  Guangxi: [23.8298, 108.7881],
+  Hainan: [19.5664, 109.9497],
+  Hebei: [38.0428, 114.5149],
+  Hunan: [27.6104, 111.7088],
+  Jiangsu: [32.9711, 119.455],
+  Jiangxi: [27.614, 115.7221],
+  Shanghai: [31.2304, 121.4737],
+  Sichuan: [30.6517, 104.0759],
+  Zhejiang: [29.1832, 120.0934],
+  Taiwan: [23.6978, 120.9605],
+  Tibet: [31.6927, 88.0924],
+  "Inner Mongolia": [40.8175, 111.7652],
+  Guizhou: [26.5982, 106.7074],
+  Jilin: [43.6661, 126.1923],
+  Guangdong: [23.379, 113.7633],
+  Gansu: [36.0611, 103.8343],
+  Hubei: [30.5454, 114.3423],
+  Beijing: [39.9042, 116.4074],
+  Yunnan: [24.4798, 102.8329],
+  Japan: [35.6764, 139.65],
+  USA: [38.8951, -77.0364],
+  Canada: [45.4215, -75.6972],
+  Russia: [55.7558, 37.6173],
+  Brazil: [-15.7939, -47.8828],
+  // 他の地域も必要に応じて追加
 };
+
+const defaultIcon = new L.Icon({
+  iconUrl: "https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png",
+  shadowUrl: "https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png",
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41],
+});
+
+const MapWithMarkers: React.FC = () => {
+  const [selectedTaxa, setSelectedTaxa] = useState<{
+    taxa_name: string;
+    hosts: string;
+    distribution: string;
+  } | null>(null);
+
+  const markers = data.flatMap((item) =>
+    item.hosts.flatMap((hostEntry) => {
+      // distributionから地域を抽出（中国の省を優先で例示）
+      const distText = hostEntry.distribution;
+      const matchedRegion = Object.keys(regionToCoords).find((region) =>
+        distText.includes(region)
+      );
+      if (!matchedRegion) return [];
+
+      return {
+        taxa_name: item.taxa_name,
+        hosts: hostEntry.hosts,
+        distribution: hostEntry.distribution,
+        coords: regionToCoords[matchedRegion],
+      };
+    })
+  );
+
+  return (
+    <div style={{ display: "flex" }}>
+      <div style={{ flex: 1 }}>
+        <MapContainer
+          center={[30, 110]}
+          zoom={4}
+          style={{ height: "100vh", width: "100%" }}
+        >
+          <TileLayer
+            attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a>'
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          />
+          {markers.map(({ taxa_name, hosts, distribution, coords }, i) => (
+            <Marker
+              key={i}
+              position={coords}
+              icon={defaultIcon}
+              eventHandlers={{
+                click: () => {
+                  setSelectedTaxa({ taxa_name, hosts, distribution });
+                },
+              }}
+            />
+          ))}
+        </MapContainer>
+      </div>
+      {selectedTaxa && (
+        <MarkerSidebar
+          taxa_name={selectedTaxa.taxa_name}
+          hosts={selectedTaxa.hosts}
+          distribution={selectedTaxa.distribution}
+          onClose={() => setSelectedTaxa(null)}
+        />
+      )}
+    </div>
+  );
+};
+
+export default MarkerSidebar;
 
 const data = [
   {
@@ -365,135 +469,3 @@ const data = [
     ],
   },
 ];
-
-// 地域名と座標の対応（必要に応じて追加）
-export const regionToCoords: { [key: string]: [number, number] } = {
-  // 中国の省
-  Anhui: [31.8612, 117.2857],
-  Fujian: [26.0745, 119.2965],
-  Guangxi: [23.8298, 108.7881],
-  Hainan: [19.5664, 109.9497],
-  Hebei: [38.0428, 114.5149],
-  Hunan: [27.6104, 111.7088],
-  Jiangsu: [32.9711, 119.455],
-  Jiangxi: [27.614, 115.7221],
-  Shanghai: [31.2304, 121.4737],
-  Sichuan: [30.6517, 104.0759],
-  Zhejiang: [29.1832, 120.0934],
-  Taiwan: [23.6978, 120.9605],
-  Tibet: [31.6927, 88.0924],
-  "Inner Mongolia": [40.8175, 111.7652],
-  Guizhou: [26.5982, 106.7074],
-  Jilin: [43.6661, 126.1923],
-  Guangdong: [23.379, 113.7633],
-  Gansu: [36.0611, 103.8343],
-  Hubei: [30.5454, 114.3423],
-  Beijing: [39.9042, 116.4074],
-  Yunnan: [24.4798, 102.8329],
-
-  // 他の国・地域
-  Japan: [35.6764, 139.65],
-  SouthKorea: [37.5665, 126.978],
-  NorthKorea: [39.0392, 125.7625],
-  USA: [38.8951, -77.0364],
-  Canada: [45.4215, -75.6972],
-  Russia: [55.7558, 37.6173],
-  India: [28.6139, 77.209],
-  Vietnam: [21.0285, 105.8542],
-  Thailand: [13.7563, 100.5018],
-  Philippines: [14.5995, 120.9842],
-  Indonesia: [-6.2088, 106.8456],
-  Australia: [-33.8688, 151.2093],
-  UK: [51.5074, -0.1278],
-  France: [48.8566, 2.3522],
-  Germany: [52.52, 13.405],
-  Brazil: [-15.7939, -47.8828],
-  SouthAfrica: [-25.7461, 28.1881],
-};
-
-const defaultIcon = new L.Icon({
-  iconUrl: "https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png",
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-});
-
-const MapWithSidebar = () => {
-  const [selectedTaxa, setSelectedTaxa] = useState<{
-    taxa_name: string;
-    hosts: string;
-    distribution: string;
-  } | null>(null);
-
-  const handleMarkerClick = (
-    taxa_name: string,
-    hosts: string,
-    distribution: string
-  ) => {
-    setSelectedTaxa({ taxa_name, hosts, distribution });
-  };
-
-  return (
-    <div style={{ display: "flex", height: "100vh" }}>
-      {/* 地図部分 */}
-      <MapContainer
-        center={[30, 110]}
-        zoom={3}
-        style={{ width: "70%", height: "100%" }}
-      >
-        <TileLayer
-          attribution="&copy; OpenStreetMap contributors"
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        />
-
-        {/* 各データに対して分布ごとにマーカーを配置 */}
-        {data.map((entry, idx) => {
-          const dist = entry.hosts[0].distribution;
-          const hosts = entry.hosts[0].hosts;
-
-          // 分布内にある地域名とregionToCoordsをマッチング
-          const matchedRegions = Object.keys(regionToCoords).filter((region) =>
-            dist.includes(region)
-          );
-
-          return matchedRegions.map((region, rIdx) => (
-            <Marker
-              key={`${idx}-${rIdx}`}
-              position={regionToCoords[region]}
-              icon={defaultIcon}
-              eventHandlers={{
-                click: () => handleMarkerClick(entry.taxa_name, hosts, dist),
-              }}
-            />
-          ));
-        })}
-      </MapContainer>
-
-      {/* サイドパネル部分 */}
-      <div
-        style={{
-          width: "30%",
-          padding: "1rem",
-          background: "#f4f4f4",
-          borderLeft: "1px solid #ccc",
-          overflowY: "auto",
-        }}
-      >
-        {selectedTaxa ? (
-          <>
-            <h2>{selectedTaxa.taxa_name}</h2>
-            <p>
-              <strong>Hosts:</strong> {selectedTaxa.hosts}
-            </p>
-            <p>
-              <strong>Distribution:</strong> {selectedTaxa.distribution}
-            </p>
-          </>
-        ) : (
-          <p>マーカーをクリックしてください。</p>
-        )}
-      </div>
-    </div>
-  );
-};
-
-export default MarkerSidebar;
