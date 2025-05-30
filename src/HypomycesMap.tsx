@@ -1,558 +1,559 @@
-import React, { useState } from "react";
-import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
-import L from "leaflet";
-import "leaflet/dist/leaflet.css";
+// import React, { useState } from "react";
+// import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+// import L from "leaflet";
+// import "leaflet/dist/leaflet.css";
+// import MapComponent from "./MapComponent";
 
-// 色付きマーカー画像URL（leaflet-color-markersより）
-const iconUrls = {
-  red: {
-    iconUrl:
-      "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png",
-    shadowUrl:
-      "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
-  },
-  green: {
-    iconUrl:
-      "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png",
-    shadowUrl:
-      "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
-  },
-  orange: {
-    iconUrl:
-      "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-orange.png",
-    shadowUrl:
-      "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
-  },
-  yellow: {
-    iconUrl:
-      "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-yellow.png",
-    shadowUrl:
-      "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
-  },
-  violet: {
-    iconUrl:
-      "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-violet.png",
-    shadowUrl:
-      "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
-  },
-  blue: {
-    iconUrl:
-      "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png",
-    shadowUrl:
-      "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
-  },
-};
+// // 色付きマーカー画像URL（leaflet-color-markersより）
+// const iconUrls = {
+//   red: {
+//     iconUrl:
+//       "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png",
+//     shadowUrl:
+//       "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
+//   },
+//   green: {
+//     iconUrl:
+//       "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png",
+//     shadowUrl:
+//       "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
+//   },
+//   orange: {
+//     iconUrl:
+//       "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-orange.png",
+//     shadowUrl:
+//       "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
+//   },
+//   yellow: {
+//     iconUrl:
+//       "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-yellow.png",
+//     shadowUrl:
+//       "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
+//   },
+//   violet: {
+//     iconUrl:
+//       "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-violet.png",
+//     shadowUrl:
+//       "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
+//   },
+//   blue: {
+//     iconUrl:
+//       "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png",
+//     shadowUrl:
+//       "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
+//   },
+// };
 
-// taxaごとに色を指定
-const taxaColorMap: { [taxaName: string]: keyof typeof iconUrls } = {
-  "Hypomyces aurantius": "red",
-  "Hypomyces aureonitens": "green",
-  "Hypomyces chrysospermus": "orange",
-  "Hypomyces cervinigenus": "yellow",
-  "Hypomyces hyalinus": "violet",
-  "Hypomyces chrysospermus var. ochraceus": "blue",
-};
+// // taxaごとに色を指定
+// const taxaColorMap: { [taxaName: string]: keyof typeof iconUrls } = {
+//   "Hypomyces aurantius": "red",
+//   "Hypomyces aureonitens": "green",
+//   "Hypomyces chrysospermus": "orange",
+//   "Hypomyces cervinigenus": "yellow",
+//   "Hypomyces hyalinus": "violet",
+//   "Hypomyces chrysospermus var. ochraceus": "blue",
+// };
 
-// カスタムアイコン作成
-const createIcon = (colorKey: keyof typeof iconUrls) =>
-  new L.Icon({
-    iconUrl: iconUrls[colorKey].iconUrl,
-    shadowUrl: iconUrls[colorKey].shadowUrl,
-    iconSize: [25, 41],
-    iconAnchor: [12, 41],
-    popupAnchor: [1, -34],
-    shadowSize: [41, 41],
-  });
+// // カスタムアイコン作成
+// const createIcon = (colorKey: keyof typeof iconUrls) =>
+//   new L.Icon({
+//     iconUrl: iconUrls[colorKey].iconUrl,
+//     shadowUrl: iconUrls[colorKey].shadowUrl,
+//     iconSize: [25, 41],
+//     iconAnchor: [12, 41],
+//     popupAnchor: [1, -34],
+//     shadowSize: [41, 41],
+//   });
 
-// 菌類データ例
-const taxaData = [
-  {
-    taxa_name: "Hypomyces aurantius",
-    hosts: [
-      {
-        hosts:
-          "Agaricus bisporus, Polyporales (Cymatoderma sp., Laetiporus sulphureus, Panellus sp., Polyporus picipes), Stereum sp.",
-        distribution:
-          "China (Anhui, Fujian, Guangxi, Hainan, Hebei, Hunan, Jiangsu, Jiangxi, Shanghai, Sichuan, Zhejiang), New Zealand, USA",
-        source: "",
-        notes: "",
-      },
-    ],
-  },
-  {
-    taxa_name: "Hypomyces aureonitens",
-    hosts: [
-      {
-        hosts: "Phlebia tremellosa, Polyporus sp.",
-        distribution: "China (Fujian, Guangxi), Europe",
-        source: "",
-        notes: "",
-      },
-    ],
-  },
-  {
-    taxa_name: "Hypomyces chlorinigenus",
-    hosts: [
-      {
-        hosts: "Agaricaceae, Boletaceae",
-        distribution:
-          "Belgium, China (Taiwan), Guyana, Indonesia, New Zealand, USA",
-        source: "",
-        notes: "",
-      },
-    ],
-  },
-  {
-    taxa_name: "Hypomyces chrysospermus",
-    hosts: [
-      {
-        hosts:
-          "Boletus sp., Hemileccinum impolitum, Suillus americanus, Russula sp.",
-        distribution: "China (Fujian, Jilin, Jiangsu), Russia",
-        source: "",
-        notes: "",
-      },
-    ],
-  },
-  {
-    taxa_name: "Hypomyces completiopsis",
-    hosts: [
-      {
-        hosts: "Boletus sp.",
-        distribution: "China (Yunnan)",
-        source: "",
-        notes: "",
-      },
-    ],
-  },
-  {
-    taxa_name: "Hypomyces fistulina",
-    hosts: [
-      {
-        hosts: "Fistulina sp.",
-        distribution: "China (Guangxi)",
-        source: "",
-        notes: "",
-      },
-    ],
-  },
-  {
-    taxa_name: "Hypomyces hubeiensis",
-    hosts: [
-      {
-        hosts: "Agaricus sp.",
-        distribution: "China (Hubei)",
-        source: "",
-        notes: "",
-      },
-    ],
-  },
-  {
-    taxa_name: "Hypomyces hyalinus",
-    hosts: [
-      {
-        hosts: "Agaricales (Amanita sp.), Polyporales",
-        distribution: "Canada, China (Jiangsu), Japan, USA",
-        source: "",
-        notes: "",
-      },
-    ],
-  },
-  {
-    taxa_name: "Hypomyces lateritius",
-    hosts: [
-      {
-        hosts:
-          "Lactarius camphoratus, L. chelidonium, L. controversus, L. deliciosus, L. sanguifluus, L. thejogalus, L. trivialis, Lactarius sp.",
-        distribution:
-          "Canada, China (Tibet), Europe, Japan, Mexico, New Zealand, USA",
-        source: "",
-        notes: "",
-      },
-    ],
-  },
-  {
-    taxa_name: "Hypomyces luteovirens",
-    hosts: [
-      {
-        hosts: "Russula atropurpurea, R. rosea, R. sanguinaria, Russula sp.",
-        distribution:
-          "Canada, China (Inner Mongolia), Europe, Japan, Russia, USA",
-        source: "",
-        notes: "",
-      },
-    ],
-  },
-  {
-    taxa_name: "Hypomyces macrosporus",
-    hosts: [
-      {
-        hosts: "Russulaceae",
-        distribution: "China (Hubei), Mexico, USA",
-        source: "",
-        notes: "",
-      },
-    ],
-  },
-  {
-    taxa_name: "Hypomyces microspermus",
-    hosts: [
-      {
-        hosts:
-          "Boletaceae, Boletus sp., Imleria badia, Xanthoconium affine, Xerocomellus chrysenteron, Xerocomus sp.",
-        distribution:
-          "Canada, China (Fujian, Guizhou, Hainan, Hubei, Jilin, Taiwan, Yunnan), Indonesia, New Zealand, USA",
-        source: "",
-        notes: "",
-      },
-    ],
-  },
-  {
-    taxa_name: "Hypomyces mycophilus",
-    hosts: [
-      {
-        hosts:
-          "Auricularia sp., Bulgari sp., Marasmius sp., Polyporus sp., Trametes versicolor",
-        distribution: "China (Guangdong), USA",
-        source: "",
-        notes: "",
-      },
-    ],
-  },
-  {
-    taxa_name: "Hypomyces ochraceus",
-    hosts: [
-      {
-        hosts: "Decaying leaves, wood and fungi (e.g., Russula sp.)",
-        distribution: "China (Guangxi, Yunnan), Europe, USA",
-        source: "",
-        notes: "",
-      },
-    ],
-  },
-  {
-    taxa_name: "Hypomyces orthosporus",
-    hosts: [
-      {
-        hosts: "Polyporales",
-        distribution: "China (Tibet), Estonia, Finland, The Netherlands",
-        source: "",
-        notes: "",
-      },
-    ],
-  },
-  {
-    taxa_name: "Hypomyces papulasporae",
-    hosts: [
-      {
-        hosts:
-          "Geoglossum difforme, G. fallax, G. glabrum, G. nigritum, G. simile, Glutinoglossum glutinosum, Trichoglossum hirsutum, T. walteri",
-        distribution: "China, USA, New Zealand",
-        source: "",
-        notes: "",
-      },
-    ],
-  },
-  {
-    taxa_name: "Hypomyces polyporinus",
-    hosts: [
-      {
-        hosts:
-          "Auricularia auricula-judae, Polyporales, Trametes versicolor, T. pubescens, Polyporus sp.",
-        distribution: "Canada, China (Guangxi), USA",
-        source: "",
-        notes: "",
-      },
-    ],
-  },
-  {
-    taxa_name: "Hypomyces pseudolactifluorum sp. nov.",
-    hosts: [
-      {
-        hosts: "Russula sp.",
-        distribution: "China (Yunnan)",
-        source: "",
-        notes: "",
-      },
-    ],
-  },
-  {
-    taxa_name: "Hypomyces rosellus",
-    hosts: [
-      {
-        hosts:
-          "Agaricus bisporus, Armillaria sp., Hydnellum sp., Hyphoderma sp., Mycena sp., Polyporus sp., Russula sp., Trichaptum sp.",
-        distribution: "China (Gansu), Europe, Iran, Japan, Korea, USA",
-        source: "",
-        notes: "",
-      },
-    ],
-  },
-  {
-    taxa_name: "Hypomyces semicircularis",
-    hosts: [
-      {
-        hosts: "Ganoderma sichuanense, Microporus xanthopus",
-        distribution: "Cuba, China",
-        source: "",
-        notes: "",
-      },
-    ],
-  },
-  {
-    taxa_name: "Hypomyces sibirinae",
-    hosts: [
-      {
-        hosts: "Aphyllophorales, Boletus sp., Polyporales",
-        distribution: "China (Hunan), Indonesia, USA",
-        source: "",
-        notes: "",
-      },
-    ],
-  },
-  {
-    taxa_name: "Hypomyces sinicus",
-    hosts: [
-      {
-        hosts: "Schizophyllum sp.",
-        distribution: "China (Anhui)",
-        source: "",
-        notes: "",
-      },
-    ],
-  },
-  {
-    taxa_name: "Hypomyces stephanomatis",
-    hosts: [
-      {
-        hosts: "Humaria hemisphaerica, Humaria sp.",
-        distribution: "Canada, China (Hubei), Germany, USA",
-        source: "",
-        notes: "",
-      },
-    ],
-  },
-  {
-    taxa_name: "Hypomyces subiculosus",
-    hosts: [
-      {
-        hosts: "Polyporaceae (Microporus affinis, Trametes versicolor)",
-        distribution: "China (Anhui, Beijing, Guangxi, Zhejiang), Cuba, Japan",
-        source: "",
-        notes: "",
-      },
-    ],
-  },
-  {
-    taxa_name: "Hypomyces succineus",
-    hosts: [
-      {
-        hosts: "Pholiota sp.",
-        distribution: "China (Taiwan), USA",
-        source: "",
-        notes: "",
-      },
-    ],
-  },
-  {
-    taxa_name: "Hypomyces tegillum",
-    hosts: [
-      {
-        hosts: "Aphyllophorales, Polyporales",
-        distribution: "Brazil, China (Guangxi, Yunnan), Panama, USA",
-        source: "",
-        notes: "",
-      },
-    ],
-  },
-  {
-    taxa_name: "Hypomyces triseptatus",
-    hosts: [
-      {
-        hosts: "Bark or associated with an ascomycete; Pyrenomycete",
-        distribution: "China (Hunan, Guangdong), Gabon",
-        source: "",
-        notes: "",
-      },
-    ],
-  },
-  {
-    taxa_name: "Hypomyces yunnanensis",
-    hosts: [
-      {
-        hosts: "Boletus sp.",
-        distribution: "China (Yunnan)",
-        source: "",
-        notes: "",
-      },
-    ],
-  },
-];
+// // 菌類データ例
+// const taxaData = [
+//   {
+//     taxa_name: "Hypomyces aurantius",
+//     hosts: [
+//       {
+//         hosts:
+//           "Agaricus bisporus, Polyporales (Cymatoderma sp., Laetiporus sulphureus, Panellus sp., Polyporus picipes), Stereum sp.",
+//         distribution:
+//           "China (Anhui, Fujian, Guangxi, Hainan, Hebei, Hunan, Jiangsu, Jiangxi, Shanghai, Sichuan, Zhejiang), New Zealand, USA",
+//         source: "",
+//         notes: "",
+//       },
+//     ],
+//   },
+//   {
+//     taxa_name: "Hypomyces aureonitens",
+//     hosts: [
+//       {
+//         hosts: "Phlebia tremellosa, Polyporus sp.",
+//         distribution: "China (Fujian, Guangxi), Europe",
+//         source: "",
+//         notes: "",
+//       },
+//     ],
+//   },
+//   {
+//     taxa_name: "Hypomyces chlorinigenus",
+//     hosts: [
+//       {
+//         hosts: "Agaricaceae, Boletaceae",
+//         distribution:
+//           "Belgium, China (Taiwan), Guyana, Indonesia, New Zealand, USA",
+//         source: "",
+//         notes: "",
+//       },
+//     ],
+//   },
+//   {
+//     taxa_name: "Hypomyces chrysospermus",
+//     hosts: [
+//       {
+//         hosts:
+//           "Boletus sp., Hemileccinum impolitum, Suillus americanus, Russula sp.",
+//         distribution: "China (Fujian, Jilin, Jiangsu), Russia",
+//         source: "",
+//         notes: "",
+//       },
+//     ],
+//   },
+//   {
+//     taxa_name: "Hypomyces completiopsis",
+//     hosts: [
+//       {
+//         hosts: "Boletus sp.",
+//         distribution: "China (Yunnan)",
+//         source: "",
+//         notes: "",
+//       },
+//     ],
+//   },
+//   {
+//     taxa_name: "Hypomyces fistulina",
+//     hosts: [
+//       {
+//         hosts: "Fistulina sp.",
+//         distribution: "China (Guangxi)",
+//         source: "",
+//         notes: "",
+//       },
+//     ],
+//   },
+//   {
+//     taxa_name: "Hypomyces hubeiensis",
+//     hosts: [
+//       {
+//         hosts: "Agaricus sp.",
+//         distribution: "China (Hubei)",
+//         source: "",
+//         notes: "",
+//       },
+//     ],
+//   },
+//   {
+//     taxa_name: "Hypomyces hyalinus",
+//     hosts: [
+//       {
+//         hosts: "Agaricales (Amanita sp.), Polyporales",
+//         distribution: "Canada, China (Jiangsu), Japan, USA",
+//         source: "",
+//         notes: "",
+//       },
+//     ],
+//   },
+//   {
+//     taxa_name: "Hypomyces lateritius",
+//     hosts: [
+//       {
+//         hosts:
+//           "Lactarius camphoratus, L. chelidonium, L. controversus, L. deliciosus, L. sanguifluus, L. thejogalus, L. trivialis, Lactarius sp.",
+//         distribution:
+//           "Canada, China (Tibet), Europe, Japan, Mexico, New Zealand, USA",
+//         source: "",
+//         notes: "",
+//       },
+//     ],
+//   },
+//   {
+//     taxa_name: "Hypomyces luteovirens",
+//     hosts: [
+//       {
+//         hosts: "Russula atropurpurea, R. rosea, R. sanguinaria, Russula sp.",
+//         distribution:
+//           "Canada, China (Inner Mongolia), Europe, Japan, Russia, USA",
+//         source: "",
+//         notes: "",
+//       },
+//     ],
+//   },
+//   {
+//     taxa_name: "Hypomyces macrosporus",
+//     hosts: [
+//       {
+//         hosts: "Russulaceae",
+//         distribution: "China (Hubei), Mexico, USA",
+//         source: "",
+//         notes: "",
+//       },
+//     ],
+//   },
+//   {
+//     taxa_name: "Hypomyces microspermus",
+//     hosts: [
+//       {
+//         hosts:
+//           "Boletaceae, Boletus sp., Imleria badia, Xanthoconium affine, Xerocomellus chrysenteron, Xerocomus sp.",
+//         distribution:
+//           "Canada, China (Fujian, Guizhou, Hainan, Hubei, Jilin, Taiwan, Yunnan), Indonesia, New Zealand, USA",
+//         source: "",
+//         notes: "",
+//       },
+//     ],
+//   },
+//   {
+//     taxa_name: "Hypomyces mycophilus",
+//     hosts: [
+//       {
+//         hosts:
+//           "Auricularia sp., Bulgari sp., Marasmius sp., Polyporus sp., Trametes versicolor",
+//         distribution: "China (Guangdong), USA",
+//         source: "",
+//         notes: "",
+//       },
+//     ],
+//   },
+//   {
+//     taxa_name: "Hypomyces ochraceus",
+//     hosts: [
+//       {
+//         hosts: "Decaying leaves, wood and fungi (e.g., Russula sp.)",
+//         distribution: "China (Guangxi, Yunnan), Europe, USA",
+//         source: "",
+//         notes: "",
+//       },
+//     ],
+//   },
+//   {
+//     taxa_name: "Hypomyces orthosporus",
+//     hosts: [
+//       {
+//         hosts: "Polyporales",
+//         distribution: "China (Tibet), Estonia, Finland, The Netherlands",
+//         source: "",
+//         notes: "",
+//       },
+//     ],
+//   },
+//   {
+//     taxa_name: "Hypomyces papulasporae",
+//     hosts: [
+//       {
+//         hosts:
+//           "Geoglossum difforme, G. fallax, G. glabrum, G. nigritum, G. simile, Glutinoglossum glutinosum, Trichoglossum hirsutum, T. walteri",
+//         distribution: "China, USA, New Zealand",
+//         source: "",
+//         notes: "",
+//       },
+//     ],
+//   },
+//   {
+//     taxa_name: "Hypomyces polyporinus",
+//     hosts: [
+//       {
+//         hosts:
+//           "Auricularia auricula-judae, Polyporales, Trametes versicolor, T. pubescens, Polyporus sp.",
+//         distribution: "Canada, China (Guangxi), USA",
+//         source: "",
+//         notes: "",
+//       },
+//     ],
+//   },
+//   {
+//     taxa_name: "Hypomyces pseudolactifluorum sp. nov.",
+//     hosts: [
+//       {
+//         hosts: "Russula sp.",
+//         distribution: "China (Yunnan)",
+//         source: "",
+//         notes: "",
+//       },
+//     ],
+//   },
+//   {
+//     taxa_name: "Hypomyces rosellus",
+//     hosts: [
+//       {
+//         hosts:
+//           "Agaricus bisporus, Armillaria sp., Hydnellum sp., Hyphoderma sp., Mycena sp., Polyporus sp., Russula sp., Trichaptum sp.",
+//         distribution: "China (Gansu), Europe, Iran, Japan, Korea, USA",
+//         source: "",
+//         notes: "",
+//       },
+//     ],
+//   },
+//   {
+//     taxa_name: "Hypomyces semicircularis",
+//     hosts: [
+//       {
+//         hosts: "Ganoderma sichuanense, Microporus xanthopus",
+//         distribution: "Cuba, China",
+//         source: "",
+//         notes: "",
+//       },
+//     ],
+//   },
+//   {
+//     taxa_name: "Hypomyces sibirinae",
+//     hosts: [
+//       {
+//         hosts: "Aphyllophorales, Boletus sp., Polyporales",
+//         distribution: "China (Hunan), Indonesia, USA",
+//         source: "",
+//         notes: "",
+//       },
+//     ],
+//   },
+//   {
+//     taxa_name: "Hypomyces sinicus",
+//     hosts: [
+//       {
+//         hosts: "Schizophyllum sp.",
+//         distribution: "China (Anhui)",
+//         source: "",
+//         notes: "",
+//       },
+//     ],
+//   },
+//   {
+//     taxa_name: "Hypomyces stephanomatis",
+//     hosts: [
+//       {
+//         hosts: "Humaria hemisphaerica, Humaria sp.",
+//         distribution: "Canada, China (Hubei), Germany, USA",
+//         source: "",
+//         notes: "",
+//       },
+//     ],
+//   },
+//   {
+//     taxa_name: "Hypomyces subiculosus",
+//     hosts: [
+//       {
+//         hosts: "Polyporaceae (Microporus affinis, Trametes versicolor)",
+//         distribution: "China (Anhui, Beijing, Guangxi, Zhejiang), Cuba, Japan",
+//         source: "",
+//         notes: "",
+//       },
+//     ],
+//   },
+//   {
+//     taxa_name: "Hypomyces succineus",
+//     hosts: [
+//       {
+//         hosts: "Pholiota sp.",
+//         distribution: "China (Taiwan), USA",
+//         source: "",
+//         notes: "",
+//       },
+//     ],
+//   },
+//   {
+//     taxa_name: "Hypomyces tegillum",
+//     hosts: [
+//       {
+//         hosts: "Aphyllophorales, Polyporales",
+//         distribution: "Brazil, China (Guangxi, Yunnan), Panama, USA",
+//         source: "",
+//         notes: "",
+//       },
+//     ],
+//   },
+//   {
+//     taxa_name: "Hypomyces triseptatus",
+//     hosts: [
+//       {
+//         hosts: "Bark or associated with an ascomycete; Pyrenomycete",
+//         distribution: "China (Hunan, Guangdong), Gabon",
+//         source: "",
+//         notes: "",
+//       },
+//     ],
+//   },
+//   {
+//     taxa_name: "Hypomyces yunnanensis",
+//     hosts: [
+//       {
+//         hosts: "Boletus sp.",
+//         distribution: "China (Yunnan)",
+//         source: "",
+//         notes: "",
+//       },
+//     ],
+//   },
+// ];
 
-export const regionToCoords: { [key: string]: [number, number] } = {
-  // 中国の省
-  Anhui: [31.8612, 117.2857],
-  Fujian: [26.0745, 119.2965],
-  Guangxi: [23.8298, 108.7881],
-  Hainan: [19.5664, 109.9497],
-  Hebei: [38.0428, 114.5149],
-  Hunan: [27.6104, 111.7088],
-  Jiangsu: [32.9711, 119.455],
-  Jiangxi: [27.614, 115.7221],
-  Shanghai: [31.2304, 121.4737],
-  Sichuan: [30.6517, 104.0759],
-  Zhejiang: [29.1832, 120.0934],
-  Taiwan: [23.6978, 120.9605],
-  Tibet: [31.6927, 88.0924],
-  "Inner Mongolia": [40.8175, 111.7652],
-  Guizhou: [26.5982, 106.7074],
-  Jilin: [43.6661, 126.1923],
-  Guangdong: [23.379, 113.7633],
-  Gansu: [36.0611, 103.8343],
-  Hubei: [30.5454, 114.3423],
-  Beijing: [39.9042, 116.4074],
-  Yunnan: [24.4798, 102.8329],
+// export const regionToCoords: { [key: string]: [number, number] } = {
+//   // 中国の省
+//   Anhui: [31.8612, 117.2857],
+//   Fujian: [26.0745, 119.2965],
+//   Guangxi: [23.8298, 108.7881],
+//   Hainan: [19.5664, 109.9497],
+//   Hebei: [38.0428, 114.5149],
+//   Hunan: [27.6104, 111.7088],
+//   Jiangsu: [32.9711, 119.455],
+//   Jiangxi: [27.614, 115.7221],
+//   Shanghai: [31.2304, 121.4737],
+//   Sichuan: [30.6517, 104.0759],
+//   Zhejiang: [29.1832, 120.0934],
+//   Taiwan: [23.6978, 120.9605],
+//   Tibet: [31.6927, 88.0924],
+//   "Inner Mongolia": [40.8175, 111.7652],
+//   Guizhou: [26.5982, 106.7074],
+//   Jilin: [43.6661, 126.1923],
+//   Guangdong: [23.379, 113.7633],
+//   Gansu: [36.0611, 103.8343],
+//   Hubei: [30.5454, 114.3423],
+//   Beijing: [39.9042, 116.4074],
+//   Yunnan: [24.4798, 102.8329],
 
-  // 他の国・地域
-  Japan: [35.6764, 139.65],
-  SouthKorea: [37.5665, 126.978],
-  NorthKorea: [39.0392, 125.7625],
-  USA: [38.8951, -77.0364],
-  Canada: [45.4215, -75.6972],
-  Russia: [55.7558, 37.6173],
-  India: [28.6139, 77.209],
-  Vietnam: [21.0285, 105.8542],
-  Thailand: [13.7563, 100.5018],
-  Philippines: [14.5995, 120.9842],
-  Indonesia: [-6.2088, 106.8456],
-  Australia: [-33.8688, 151.2093],
-  UK: [51.5074, -0.1278],
-  France: [48.8566, 2.3522],
-  Germany: [52.52, 13.405],
-  Brazil: [-15.7939, -47.8828],
-  SouthAfrica: [-25.7461, 28.1881],
-};
-const extractRegions = (distribution: string): [number, number][] => {
-  if (!distribution) return [];
-  const regions = distribution.split(",").map((r) => r.trim());
-  const coordsList: [number, number][] = [];
-  for (const region of regions) {
-    const coords = regionToCoords[region];
-    if (coords) coordsList.push(coords);
-  }
-  return coordsList;
-};
+//   // 他の国・地域
+//   Japan: [35.6764, 139.65],
+//   SouthKorea: [37.5665, 126.978],
+//   NorthKorea: [39.0392, 125.7625],
+//   USA: [38.8951, -77.0364],
+//   Canada: [45.4215, -75.6972],
+//   Russia: [55.7558, 37.6173],
+//   India: [28.6139, 77.209],
+//   Vietnam: [21.0285, 105.8542],
+//   Thailand: [13.7563, 100.5018],
+//   Philippines: [14.5995, 120.9842],
+//   Indonesia: [-6.2088, 106.8456],
+//   Australia: [-33.8688, 151.2093],
+//   UK: [51.5074, -0.1278],
+//   France: [48.8566, 2.3522],
+//   Germany: [52.52, 13.405],
+//   Brazil: [-15.7939, -47.8828],
+//   SouthAfrica: [-25.7461, 28.1881],
+// };
+// const extractRegions = (distribution: string): [number, number][] => {
+//   if (!distribution) return [];
+//   const regions = distribution.split(",").map((r) => r.trim());
+//   const coordsList: [number, number][] = [];
+//   for (const region of regions) {
+//     const coords = regionToCoords[region];
+//     if (coords) coordsList.push(coords);
+//   }
+//   return coordsList;
+// };
 
-interface MarkerSidebarProps {
-  taxa_name: string;
-  hosts: string;
-  distribution: string;
-  onClose: () => void;
-}
+// interface MarkerSidebarProps {
+//   taxa_name: string;
+//   hosts: string;
+//   distribution: string;
+//   onClose: () => void;
+// }
 
-const MarkerSidebar: React.FC<MarkerSidebarProps> = ({
-  taxa_name,
-  hosts,
-  distribution,
-  onClose,
-}) => {
-  return (
-    <div
-      style={{
-        position: "fixed",
-        right: 0,
-        top: 0,
-        width: "280px",
-        height: "100%",
-        backgroundColor: "white",
-        borderLeft: "1px solid #ccc",
-        padding: "1rem",
-        overflowY: "auto",
-        zIndex: 1000,
-      }}
-    >
-      <button onClick={onClose} style={{ marginBottom: "1rem" }}>
-        閉じる
-      </button>
-      <h2>{taxa_name}</h2>
-      <p>
-        <strong>Hosts:</strong> {hosts}
-      </p>
-      <p>
-        <strong>Distribution:</strong> {distribution}
-      </p>
-    </div>
-  );
-};
+// const MarkerSidebar: React.FC<MarkerSidebarProps> = ({
+//   taxa_name,
+//   hosts,
+//   distribution,
+//   onClose,
+// }) => {
+//   return (
+//     <div
+//       style={{
+//         position: "fixed",
+//         right: 0,
+//         top: 0,
+//         width: "280px",
+//         height: "100%",
+//         backgroundColor: "white",
+//         borderLeft: "1px solid #ccc",
+//         padding: "1rem",
+//         overflowY: "auto",
+//         zIndex: 1000,
+//       }}
+//     >
+//       <button onClick={onClose} style={{ marginBottom: "1rem" }}>
+//         閉じる
+//       </button>
+//       <h2>{taxa_name}</h2>
+//       <p>
+//         <strong>Hosts:</strong> {hosts}
+//       </p>
+//       <p>
+//         <strong>Distribution:</strong> {distribution}
+//       </p>
+//     </div>
+//   );
+// };
 
-const HypomycesMap: React.FC = () => {
-  const [selectedTaxa, setSelectedTaxa] = useState<{
-    taxa_name: string;
-    hosts: string;
-    distribution: string;
-  } | null>(null);
+// const HypomycesMap: React.FC = () => {
+//   const [selectedTaxa, setSelectedTaxa] = useState<{
+//     taxa_name: string;
+//     hosts: string;
+//     distribution: string;
+//   } | null>(null);
 
-  const center: [number, number] = [30, 110];
-  const zoom = 3;
+//   const center: [number, number] = [30, 110];
+//   const zoom = 3;
 
-  return (
-    <div style={{ position: "relative", height: "100vh", width: "100%" }}>
-      <MapContainer
-        center={center}
-        zoom={zoom}
-        style={{ height: "100%", width: "100%" }}
-      >
-        <TileLayer
-          attribution='&copy; <a href="https://osm.org/copyright">OpenStreetMap</a> contributors'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        />
+//   return (
+//     <div style={{ position: "relative", height: "100vh", width: "100%" }}>
+//       <MapContainer
+//         center={center}
+//         zoom={zoom}
+//         style={{ height: "100%", width: "100%" }}
+//       >
+//         <TileLayer
+//           attribution='&copy; <a href="https://osm.org/copyright">OpenStreetMap</a> contributors'
+//           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+//         />
 
-        {taxaData.map((taxa, i) => {
-          const coordsList = extractRegions(taxa.hosts[0].distribution);
-          const colorKey = taxaColorMap[taxa.taxa_name] ?? "blue";
-          const icon = createIcon(colorKey);
+//         {taxaData.map((taxa, i) => {
+//           const coordsList = extractRegions(taxa.hosts[0].distribution);
+//           const colorKey = taxaColorMap[taxa.taxa_name] ?? "blue";
+//           const icon = createIcon(colorKey);
 
-          return coordsList.map((coords, idx) => (
-            <Marker
-              key={`${i}-${idx}`}
-              position={coords}
-              icon={icon}
-              eventHandlers={{
-                click: () => {
-                  setSelectedTaxa({
-                    taxa_name: taxa.taxa_name,
-                    hosts: taxa.hosts[0].hosts,
-                    distribution: taxa.hosts[0].distribution,
-                  });
-                },
-              }}
-            >
-              <Popup>
-                <div>
-                  <h3>{taxa.taxa_name}</h3>
-                  <p>
-                    <strong>Hosts:</strong> {taxa.hosts[0].hosts}
-                  </p>
-                  <p>
-                    <strong>Distribution:</strong> {taxa.hosts[0].distribution}
-                  </p>
-                </div>
-              </Popup>
-            </Marker>
-          ));
-        })}
-      </MapContainer>
+//           return coordsList.map((coords, idx) => (
+//             <Marker
+//               key={`${i}-${idx}`}
+//               position={coords}
+//               icon={icon}
+//               eventHandlers={{
+//                 click: () => {
+//                   setSelectedTaxa({
+//                     taxa_name: taxa.taxa_name,
+//                     hosts: taxa.hosts[0].hosts,
+//                     distribution: taxa.hosts[0].distribution,
+//                   });
+//                 },
+//               }}
+//             >
+//               <Popup>
+//                 <div>
+//                   <h3>{taxa.taxa_name}</h3>
+//                   <p>
+//                     <strong>Hosts:</strong> {taxa.hosts[0].hosts}
+//                   </p>
+//                   <p>
+//                     <strong>Distribution:</strong> {taxa.hosts[0].distribution}
+//                   </p>
+//                 </div>
+//               </Popup>
+//             </Marker>
+//           ));
+//         })}
+//       </MapContainer>
 
-      {selectedTaxa && (
-        <MarkerSidebar
-          taxa_name={selectedTaxa.taxa_name}
-          hosts={selectedTaxa.hosts}
-          distribution={selectedTaxa.distribution}
-          onClose={() => setSelectedTaxa(null)}
-        />
-      )}
-    </div>
-  );
-};
+//       {selectedTaxa && (
+//         <MarkerSidebar
+//           taxa_name={selectedTaxa.taxa_name}
+//           hosts={selectedTaxa.hosts}
+//           distribution={selectedTaxa.distribution}
+//           onClose={() => setSelectedTaxa(null)}
+//         />
+//       )}
+//     </div>
+//   );
+// };
 
-export default HypomycesMap;
+// export default HypomycesMap;
