@@ -1,71 +1,48 @@
+// MarkerSidebar.tsx
 import React, { useState } from "react";
-import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import { MapContainer, TileLayer, Marker } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
-// 色付きマーカー画像URL（leaflet-color-markersより）
-const iconUrls = {
-  red: {
-    iconUrl:
-      "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png",
-    shadowUrl:
-      "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
-  },
-  green: {
-    iconUrl:
-      "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png",
-    shadowUrl:
-      "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
-  },
-  orange: {
-    iconUrl:
-      "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-orange.png",
-    shadowUrl:
-      "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
-  },
-  yellow: {
-    iconUrl:
-      "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-yellow.png",
-    shadowUrl:
-      "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
-  },
-  violet: {
-    iconUrl:
-      "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-violet.png",
-    shadowUrl:
-      "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
-  },
-  blue: {
-    iconUrl:
-      "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png",
-    shadowUrl:
-      "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
-  },
+// ここにMarkerSidebarコンポーネントを定義（簡単に実装例）
+const MarkerSidebar: React.FC<{
+  taxa_name: string;
+  hosts: string;
+  distribution: string;
+  onClose: () => void;
+}> = ({ taxa_name, hosts, distribution, onClose }) => {
+  return (
+    <div
+      style={{
+        width: "30%",
+        height: "100%",
+        overflowY: "auto",
+        backgroundColor: "#f0f0f0",
+        padding: 20,
+      }}
+    >
+      <button onClick={onClose} style={{ marginBottom: 10 }}>
+        Close
+      </button>
+      <h2>{taxa_name}</h2>
+      <p>
+        <strong>Hosts:</strong> {hosts}
+      </p>
+      <p>
+        <strong>Distribution:</strong> {distribution}
+      </p>
+    </div>
+  );
 };
 
-// taxaごとに色を指定
-const taxaColorMap: { [taxaName: string]: keyof typeof iconUrls } = {
-  "Hypomyces aurantius": "red",
-  "Hypomyces aureonitens": "green",
-  "Hypomyces chrysospermus": "orange",
-  "Hypomyces cervinigenus": "yellow",
-  "Hypomyces hyalinus": "violet",
-  "Hypomyces chrysospermus var. ochraceus": "blue",
+export type MarkerData = {
+  name: string;
+  coords: [number, number];
+  region: string;
+  taxa: string;
 };
 
-// カスタムアイコン作成
-const createIcon = (colorKey: keyof typeof iconUrls) =>
-  new L.Icon({
-    iconUrl: iconUrls[colorKey].iconUrl,
-    shadowUrl: iconUrls[colorKey].shadowUrl,
-    iconSize: [25, 41],
-    iconAnchor: [12, 41],
-    popupAnchor: [1, -34],
-    shadowSize: [41, 41],
-  });
-
-// 菌類データ例
-const taxaData = [
+const data = [
   {
     taxa_name: "Hypomyces aurantius",
     hosts: [
@@ -389,6 +366,7 @@ const taxaData = [
   },
 ];
 
+// 地域名と座標の対応（必要に応じて追加）
 export const regionToCoords: { [key: string]: [number, number] } = {
   // 中国の省
   Anhui: [31.8612, 117.2857],
@@ -432,127 +410,90 @@ export const regionToCoords: { [key: string]: [number, number] } = {
   Brazil: [-15.7939, -47.8828],
   SouthAfrica: [-25.7461, 28.1881],
 };
-const extractRegions = (distribution: string): [number, number][] => {
-  if (!distribution) return [];
-  const regions = distribution.split(",").map((r) => r.trim());
-  const coordsList: [number, number][] = [];
-  for (const region of regions) {
-    const coords = regionToCoords[region];
-    if (coords) coordsList.push(coords);
-  }
-  return coordsList;
-};
 
-interface MarkerSidebarProps {
-  taxa_name: string;
-  hosts: string;
-  distribution: string;
-  onClose: () => void;
-}
+const defaultIcon = new L.Icon({
+  iconUrl: "https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png",
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+});
 
-const MarkerSidebar: React.FC<MarkerSidebarProps> = ({
-  taxa_name,
-  hosts,
-  distribution,
-  onClose,
-}) => {
-  return (
-    <div
-      style={{
-        position: "fixed",
-        right: 0,
-        top: 0,
-        width: "280px",
-        height: "100%",
-        backgroundColor: "white",
-        borderLeft: "1px solid #ccc",
-        padding: "1rem",
-        overflowY: "auto",
-        zIndex: 1000,
-      }}
-    >
-      <button onClick={onClose} style={{ marginBottom: "1rem" }}>
-        閉じる
-      </button>
-      <h2>{taxa_name}</h2>
-      <p>
-        <strong>Hosts:</strong> {hosts}
-      </p>
-      <p>
-        <strong>Distribution:</strong> {distribution}
-      </p>
-    </div>
-  );
-};
-
-const HypomycesMap: React.FC = () => {
+const MapWithSidebar = () => {
   const [selectedTaxa, setSelectedTaxa] = useState<{
     taxa_name: string;
     hosts: string;
     distribution: string;
   } | null>(null);
 
-  const center: [number, number] = [30, 110];
-  const zoom = 3;
+  const handleMarkerClick = (
+    taxa_name: string,
+    hosts: string,
+    distribution: string
+  ) => {
+    setSelectedTaxa({ taxa_name, hosts, distribution });
+  };
 
   return (
-    <div style={{ position: "relative", height: "100vh", width: "100%" }}>
+    <div style={{ display: "flex", height: "100vh" }}>
+      {/* 地図部分 */}
       <MapContainer
-        center={center}
-        zoom={zoom}
-        style={{ height: "100%", width: "100%" }}
+        center={[30, 110]}
+        zoom={3}
+        style={{ width: "70%", height: "100%" }}
       >
         <TileLayer
-          attribution='&copy; <a href="https://osm.org/copyright">OpenStreetMap</a> contributors'
+          attribution="&copy; OpenStreetMap contributors"
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
 
-        {taxaData.map((taxa, i) => {
-          const coordsList = extractRegions(taxa.hosts[0].distribution);
-          const colorKey = taxaColorMap[taxa.taxa_name] ?? "blue";
-          const icon = createIcon(colorKey);
+        {/* 各データに対して分布ごとにマーカーを配置 */}
+        {data.map((entry, idx) => {
+          const dist = entry.hosts[0].distribution;
+          const hosts = entry.hosts[0].hosts;
 
-          return coordsList.map((coords, idx) => (
+          // 分布内にある地域名とregionToCoordsをマッチング
+          const matchedRegions = Object.keys(regionToCoords).filter((region) =>
+            dist.includes(region)
+          );
+
+          return matchedRegions.map((region, rIdx) => (
             <Marker
-              key={`${i}-${idx}`}
-              position={coords}
-              icon={icon}
+              key={`${idx}-${rIdx}`}
+              position={regionToCoords[region]}
+              icon={defaultIcon}
               eventHandlers={{
-                click: () => {
-                  setSelectedTaxa({
-                    taxa_name: taxa.taxa_name,
-                    hosts: taxa.hosts[0].hosts,
-                    distribution: taxa.hosts[0].distribution,
-                  });
-                },
+                click: () => handleMarkerClick(entry.taxa_name, hosts, dist),
               }}
-            >
-              <Popup>
-                <div>
-                  <h3>{taxa.taxa_name}</h3>
-                  <p>
-                    <strong>Hosts:</strong> {taxa.hosts[0].hosts}
-                  </p>
-                  <p>
-                    <strong>Distribution:</strong> {taxa.hosts[0].distribution}
-                  </p>
-                </div>
-              </Popup>
-            </Marker>
+            />
           ));
         })}
       </MapContainer>
 
-      {selectedTaxa && (
-        <MarkerSidebar
-          taxa_name={selectedTaxa.taxa_name}
-          hosts={selectedTaxa.hosts}
-          distribution={selectedTaxa.distribution}
-          onClose={() => setSelectedTaxa(null)}
-        />
-      )}
+      {/* サイドパネル部分 */}
+      <div
+        style={{
+          width: "30%",
+          padding: "1rem",
+          background: "#f4f4f4",
+          borderLeft: "1px solid #ccc",
+          overflowY: "auto",
+        }}
+      >
+        {selectedTaxa ? (
+          <>
+            <h2>{selectedTaxa.taxa_name}</h2>
+            <p>
+              <strong>Hosts:</strong> {selectedTaxa.hosts}
+            </p>
+            <p>
+              <strong>Distribution:</strong> {selectedTaxa.distribution}
+            </p>
+          </>
+        ) : (
+          <p>マーカーをクリックしてください。</p>
+        )}
+      </div>
     </div>
   );
 };
 
-export default HypomycesMap;
+export default MarkerSidebar;
