@@ -1,8 +1,10 @@
-import React from "react";
+import React, { useState } from "react";
 import MapComponent from "./MapComponent";
 import { Helmet } from "react-helmet";
 
 const App = () => {
+  const [searchTerm, setSearchTerm] = useState("");
+
   const taxaData = [
     {
       taxa_name: "Hypomyces aurantius",
@@ -327,9 +329,21 @@ const App = () => {
       ],
     },
   ];
+  const filteredTaxaData = taxaData.filter((taxon) => {
+    const keyword = searchTerm.toLowerCase();
+
+    const nameMatch = taxon.taxa_name.toLowerCase().includes(keyword);
+    const hostInfo = taxon.hosts?.[0];
+    const hostMatch = hostInfo?.hosts?.toLowerCase().includes(keyword);
+    const distMatch = hostInfo?.distribution?.toLowerCase().includes(keyword);
+
+    return nameMatch || hostMatch || distMatch;
+  });
+
+  const showResults = searchTerm.trim().length > 0;
 
   return (
-    <>
+    <div style={{ padding: "2rem", fontFamily: "Arial, sans-serif" }}>
       <Helmet>
         <title>Hypomycesを種ごとの色分布を作ってみた</title>
         <meta
@@ -349,10 +363,55 @@ const App = () => {
         <meta name="twitter:card" content="summary" />
       </Helmet>
 
-      <main>
-        <MapComponent taxaData={taxaData} />
-      </main>
-    </>
+      <h1>Hypomyces 種データ検索</h1>
+
+      <input
+        type="text"
+        placeholder="種名・宿主・分布で検索..."
+        value={searchTerm}
+        onChange={(e) => setSearchTerm(e.target.value)}
+        style={{
+          padding: "0.5rem",
+          width: "100%",
+          maxWidth: "400px",
+          marginBottom: "1rem",
+          fontSize: "1rem",
+        }}
+      />
+
+      {showResults ? (
+        filteredTaxaData.length > 0 ? (
+          filteredTaxaData.map((taxon, index) => (
+            <div
+              key={index}
+              style={{
+                border: "1px solid #ccc",
+                borderRadius: "5px",
+                padding: "1rem",
+                marginBottom: "1rem",
+              }}
+            >
+              <h2>{taxon.taxa_name}</h2>
+              <p>
+                <strong>宿主:</strong> {taxon.hosts[0].hosts}
+              </p>
+              <p>
+                <strong>分布:</strong> {taxon.hosts[0].distribution}
+              </p>
+              {taxon.hosts[0].notes && (
+                <p>
+                  <strong>備考:</strong> {taxon.hosts[0].notes}
+                </p>
+              )}
+            </div>
+          ))
+        ) : (
+          <p>該当する種は見つかりませんでした。</p>
+        )
+      ) : (
+        <MapComponent />
+      )}
+    </div>
   );
 };
 
